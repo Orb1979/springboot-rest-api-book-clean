@@ -1,7 +1,9 @@
 package org.example.opencodelearntest.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.util.ArrayList;
@@ -11,6 +13,8 @@ import java.util.UUID;
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
+@AllArgsConstructor
 public class Book {
 
 	@Id
@@ -28,7 +32,7 @@ public class Book {
 	private String isbn;
 
 	@OneToMany(mappedBy = "book", cascade = CascadeType.ALL, orphanRemoval = true)
-	private List<AuthorBook> authorBooks = new ArrayList<>();
+	private final List<AuthorBook> authorBooks = new ArrayList<>();
 
 	@ManyToOne()
 	@JoinColumn(name = "publisher_id")
