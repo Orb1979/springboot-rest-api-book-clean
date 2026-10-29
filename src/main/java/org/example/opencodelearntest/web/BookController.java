@@ -55,6 +55,13 @@ public class BookController {
 		return bookService.addAuthorToBook(id, authorId);
 	}
 
+	// Convenience controller, could be replaced with addAuthorToBook and removeAuthorFromBook
+	@PutMapping("/{id}/authors")
+	@ResponseStatus(HttpStatus.OK)
+	public BookResponse replaceAuthors(@PathVariable UUID id, @RequestBody List<UUID> authorIds) {
+		return bookService.replaceAuthors(id, authorIds);
+	}
+
 	@DeleteMapping("/{id}/authors/{authorId}")
 	@ResponseStatus(HttpStatus.OK)
 	public BookResponse removeAuthorFromBook(@PathVariable UUID id, @PathVariable UUID authorId) {

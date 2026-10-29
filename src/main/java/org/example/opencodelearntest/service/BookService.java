@@ -10,6 +10,7 @@ import org.example.opencodelearntest.entity.Author;
 import org.example.opencodelearntest.entity.AuthorBook;
 import org.example.opencodelearntest.entity.Book;
 import org.example.opencodelearntest.entity.Publisher;
+import org.example.opencodelearntest.exception.BadRequestException;
 import org.example.opencodelearntest.exception.ResourceNotFoundException;
 import org.example.opencodelearntest.repository.AuthorRepository;
 import org.example.opencodelearntest.repository.BookRepository;
@@ -18,7 +19,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -54,7 +57,12 @@ public class BookService {
 		existingBook.setDescription(bookRequestDto.description());
 		existingBook.setPages(bookRequestDto.pages());
 		existingBook.setIsbn(bookRequestDto.isbn());
-		existingBook.setPublisher(resolvePublisher(bookRequestDto.publisherId()));
+		if (bookRequestDto.publisherId() != null) {
+			existingBook.setPublisher(resolvePublisher(bookRequestDto.publisherId()));
+		}
+
+		syncAuthors(existingBook, bookRequestDto.authorIds());
+
 		Book saved = bookRepository.save(existingBook);
 		return toResponseDto(saved);
 	}
@@ -108,6 +116,20 @@ public class BookService {
 		return getBookById(bookId);
 	}
 
+	@Transactional
+	public BookResponse replaceAuthors(UUID bookId, List<UUID> authorIds) {
+		if (authorIds == null) {
+			throw new BadRequestException("authorIds cannot be null");
+		}
+
+		Book book = bookRepository.findByIdHydrated(bookId)
+						.orElseThrow(() -> new ResourceNotFoundException("Book not found"));
+
+		syncAuthors(book, authorIds);
+
+		Book saved = bookRepository.save(book);
+		return toResponseDto(saved);
+	}
 
 	private static BookResponse toResponseDto(Book book) {
 		if (book == null) {
@@ -157,10 +179,8 @@ public class BookService {
 		return book;
 	}
 
+	// Callers must guard for null — a null publisher means "keep/unset", never "look it up".
 	private Publisher resolvePublisher(UUID publisherId) {
-		if (publisherId == null) {
-			return null;
-		}
 		return publisherRepository
 				       .findById(publisherId)
 				       .orElseThrow(() -> new ResourceNotFoundException("Publisher not found"));
@@ -172,5 +192,31 @@ public class BookService {
 			throw new ResourceNotFoundException("One or more authors not found");
 		}
 		return authors;
+	}
+
+	// Update semantics (see README "Omitted vs. empty vs. explicit"):
+	// - omitted/null authorIds -> keep the current authors
+	// - empty list -> clear all author links
+	// - non-empty list -> replace with exactly these authors; unknown ids are rejected
+	private void syncAuthors(Book book, List<UUID> newAuthorIds) {
+		if (newAuthorIds == null) {
+			return;
+		}
+
+		// Resolve all desired authors in one batch query; fails if any id is unknown
+		List<Author> desiredAuthors = resolveAuthors(newAuthorIds.stream().distinct().toList());
+
+		// Remove links to authors that are no longer in the request
+		Set<UUID> desired = desiredAuthors.stream().map(Author::getId).collect(Collectors.toSet());
+		book.getAuthorBooks().removeIf(ab -> !desired.contains(ab.getAuthor().getId()));
+
+		// Add links for authors not yet on the book
+		Set<UUID> current =
+				book.getAuthorBooks().stream().map(ab -> ab.getAuthor().getId()).collect(Collectors.toSet());
+		desiredAuthors.forEach(author -> {
+			if (!current.contains(author.getId())) {
+				book.getAuthorBooks().add(new AuthorBook(author, book));
+			}
+		});
 	}
 }

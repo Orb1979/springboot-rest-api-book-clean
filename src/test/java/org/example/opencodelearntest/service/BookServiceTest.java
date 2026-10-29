@@ -6,6 +6,7 @@ import org.example.opencodelearntest.entity.Author;
 import org.example.opencodelearntest.entity.AuthorBook;
 import org.example.opencodelearntest.entity.Book;
 import org.example.opencodelearntest.entity.Publisher;
+import org.example.opencodelearntest.exception.BadRequestException;
 import org.example.opencodelearntest.exception.ResourceNotFoundException;
 import org.example.opencodelearntest.repository.AuthorRepository;
 import org.example.opencodelearntest.repository.BookRepository;
@@ -230,14 +231,11 @@ class BookServiceTest {
             List.of(newAuthorId));
 
     when(bookRepository.findByIdHydrated(bookId)).thenReturn(Optional.of(existingBook));
-    when(bookRepository.findById(bookId)).thenReturn(Optional.of(existingBook));
     when(publisherRepository.findById(newPublisherId)).thenReturn(Optional.of(newPublisher));
-    when(authorRepository.findById(newAuthorId)).thenReturn(Optional.of(newAuthor));
+    when(authorRepository.findAllById(List.of(newAuthorId))).thenReturn(List.of(newAuthor));
     when(bookRepository.save(existingBook)).thenReturn(existingBook);
 
     BookResponse result = bookService.updateBook(bookId, request);
-    bookService.removeAuthorFromBook(bookId, oldAuthorId);
-    bookService.addAuthorToBook(bookId, newAuthorId);
 
     assertEquals("New Title", result.title());
     assertEquals(newPublisherId, result.publisher().id());
@@ -253,6 +251,96 @@ class BookServiceTest {
     BookRequest bookRequest = new BookRequest("title", "subTitle", "description", 100, "isbn", publisherId, List.of());
     when(bookRepository.findByIdHydrated(id)).thenReturn(Optional.empty());
     assertThrows(ResourceNotFoundException.class, () -> bookService.updateBook(id, bookRequest));
+    verify(bookRepository, never()).save(any());
+  }
+
+  @Test
+  void updateBookKeepsAuthorsWhenAuthorIdsOmitted() {
+    UUID bookId = UUID.randomUUID();
+
+    Author existingAuthor = new Author();
+    existingAuthor.setId(UUID.randomUUID());
+
+    Book existingBook = new Book();
+    existingBook.setId(bookId);
+    existingBook.setPages(100);
+    existingBook.getAuthorBooks().add(new AuthorBook(existingAuthor, existingBook));
+
+    BookRequest request = new BookRequest("title", "subtitle", "description", 100, "isbn", null, null);
+
+    when(bookRepository.findByIdHydrated(bookId)).thenReturn(Optional.of(existingBook));
+    when(bookRepository.save(existingBook)).thenReturn(existingBook);
+
+    BookResponse result = bookService.updateBook(bookId, request);
+
+    assertEquals(1, result.authors().size());
+    assertEquals(existingAuthor.getId(), result.authors().getFirst().id());
+    verify(bookRepository).save(existingBook);
+  }
+
+  @Test
+  void updateBookClearsAuthorsWhenAuthorIdsEmpty() {
+    UUID bookId = UUID.randomUUID();
+
+    Author existingAuthor = new Author();
+    existingAuthor.setId(UUID.randomUUID());
+
+    Book existingBook = new Book();
+    existingBook.setId(bookId);
+    existingBook.setPages(100);
+    existingBook.getAuthorBooks().add(new AuthorBook(existingAuthor, existingBook));
+
+    BookRequest request = new BookRequest("title", "subtitle", "description", 100, "isbn", null, List.of());
+
+    when(bookRepository.findByIdHydrated(bookId)).thenReturn(Optional.of(existingBook));
+    when(authorRepository.findAllById(List.of())).thenReturn(List.of());
+    when(bookRepository.save(existingBook)).thenReturn(existingBook);
+
+    BookResponse result = bookService.updateBook(bookId, request);
+
+    assertEquals(0, result.authors().size());
+    assertTrue(existingBook.getAuthorBooks().isEmpty());
+    verify(bookRepository).save(existingBook);
+  }
+
+  @Test
+  void updateBookKeepsPublisherWhenPublisherIdOmitted() {
+    UUID bookId = UUID.randomUUID();
+
+    Publisher publisher = new Publisher();
+    publisher.setId(UUID.randomUUID());
+
+    Book existingBook = new Book();
+    existingBook.setId(bookId);
+    existingBook.setPages(100);
+    existingBook.setPublisher(publisher);
+
+    BookRequest request = new BookRequest("title", "subtitle", "description", 100, "isbn", null, null);
+
+    when(bookRepository.findByIdHydrated(bookId)).thenReturn(Optional.of(existingBook));
+    when(bookRepository.save(existingBook)).thenReturn(existingBook);
+
+    BookResponse result = bookService.updateBook(bookId, request);
+
+    assertEquals(publisher.getId(), result.publisher().id());
+    verify(publisherRepository, never()).findById(any());
+    verify(bookRepository).save(existingBook);
+  }
+
+  @Test
+  void updateBookThrowsWhenAuthorNotFound() {
+    UUID bookId = UUID.randomUUID();
+    UUID authorId = UUID.randomUUID();
+
+    Book existingBook = new Book();
+    existingBook.setId(bookId);
+
+    BookRequest request = new BookRequest("title", "subtitle", "description", 100, "isbn", null, List.of(authorId));
+
+    when(bookRepository.findByIdHydrated(bookId)).thenReturn(Optional.of(existingBook));
+    when(authorRepository.findAllById(List.of(authorId))).thenReturn(List.of());
+
+    assertThrows(ResourceNotFoundException.class, () -> bookService.updateBook(bookId, request));
     verify(bookRepository, never()).save(any());
   }
 
@@ -281,6 +369,7 @@ class BookServiceTest {
 
     Book book = new Book();
     book.setId(bookId);
+    book.setPages(100);
 
     Author author = new Author();
     author.setId(authorId);
@@ -306,6 +395,7 @@ class BookServiceTest {
 
     Book book = new Book();
     book.setId(bookId);
+    book.setPages(100);
     book.getAuthorBooks().add(new AuthorBook(author, book));
 
     when(bookRepository.findById(bookId)).thenReturn(Optional.of(book));
@@ -327,6 +417,7 @@ class BookServiceTest {
 
     Book book = new Book();
     book.setId(bookId);
+    book.setPages(100);
     book.setPublisher(publisher);
 
     when(bookRepository.findById(bookId)).thenReturn(Optional.of(book));
@@ -338,5 +429,52 @@ class BookServiceTest {
     assertNull(book.getPublisher());
     verify(bookRepository).save(book);
     verify(bookRepository).findByIdHydrated(bookId);
+  }
+
+  @Test
+  void replaceAuthorsReplacesAuthorSet() {
+    UUID bookId = UUID.randomUUID();
+    UUID oldAuthorId = UUID.randomUUID();
+    UUID newAuthorId = UUID.randomUUID();
+
+    Author oldAuthor = new Author();
+    oldAuthor.setId(oldAuthorId);
+
+    Author newAuthor = new Author();
+    newAuthor.setId(newAuthorId);
+
+    Book book = new Book();
+    book.setId(bookId);
+    book.setPages(100);
+    book.getAuthorBooks().add(new AuthorBook(oldAuthor, book));
+
+    when(bookRepository.findByIdHydrated(bookId)).thenReturn(Optional.of(book));
+    when(authorRepository.findAllById(List.of(newAuthorId))).thenReturn(List.of(newAuthor));
+    when(bookRepository.save(book)).thenReturn(book);
+
+    BookResponse result = bookService.replaceAuthors(bookId, List.of(newAuthorId));
+
+    assertEquals(1, result.authors().size());
+    assertEquals(newAuthorId, result.authors().getFirst().id());
+    verify(bookRepository).save(book);
+  }
+
+  @Test
+  void replaceAuthorsThrowsWhenAuthorIdsNull() {
+    UUID bookId = UUID.randomUUID();
+
+    assertThrows(BadRequestException.class, () -> bookService.replaceAuthors(bookId, null));
+
+    verify(bookRepository, never()).save(any());
+  }
+
+  @Test
+  void replaceAuthorsReturnsNotFound() {
+    UUID bookId = UUID.randomUUID();
+    when(bookRepository.findByIdHydrated(bookId)).thenReturn(Optional.empty());
+
+    assertThrows(ResourceNotFoundException.class, () -> bookService.replaceAuthors(bookId, List.of()));
+
+    verify(bookRepository, never()).save(any());
   }
 }
