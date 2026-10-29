@@ -219,21 +219,22 @@ The project is complete when:
 - Integration tests pass against PostgreSQL.
 - The README explains how to run and test the application.
 
-
-
-
-
-
-
-
 ## Database Relationships
 
 | Relationship | Cardinality | Explanation |
 |---|---|---|
-| Publisher → Book | 1 : 0..N | A publisher can publish zero or many books. |
-| Book → Publisher | 0..1 : 1 | A book has zero or one publisher. |
-| Author → Book | N : M | An author can write many books. |
-| Book → Author | N : M | A book can have many authors. |
+| Publisher → Book | 1 : 0..N | One publisher can publish zero or many books. |
+| Book → Publisher | 1 : 0..1 | One book can have zero or one publisher. |
+| Author → Book | 1 : 0..N | One author can write zero or many books. |
+| Book → Author | 1 : 1..N | One book can have one or many authors. |
+
+**Author ↔ Book (Many-to-Many):**
+```
+Author  1 : 0..N AuthorBook 0..N : 1 Book
+Author  1 : 0..N AuthorBook | One author can have zero or many AuthorBook records.
+Book    1 : 0..N AuthorBook | One book can have zero or many AuthorBook records.
+```
+**Result:** Author and Book have a many-to-many relationship, implemented through the `author_book` join table.
 
 ### Constraints
 
@@ -242,8 +243,13 @@ The project is complete when:
 - `UNIQUE (author_id, book_id)` prevents duplicate author-book relationships.
 - Deleting an author or book cascades to its associated `author_book` records.
 
+## reading cardinality
 
+Each cardinality is written next to the entity whose instances are being counted \
+it describes how many of those instances can be associated with ***one*** instance of the entity at the ***opposite end***.
 
+Publisher  1 ─── 0..N  Book     | One publisher has ***zero or many*** books. Each book has exactly ***one*** Publisher \
+Book       0..N ─── 1 Publisher | One book has exactly ***one*** Publisher. Each Publisher has ***zero or many books***
 
 
 
