@@ -381,8 +381,34 @@ class BookServiceTest {
     BookResponse result = bookService.addAuthorToBook(bookId, authorId);
 
     assertNotNull(result);
+    assertEquals(1, book.getAuthorBooks().size());
     verify(bookRepository).save(book);
     verify(bookRepository).findByIdHydrated(bookId);
+  }
+
+  @Test
+  void addAuthorToBookIsIdempotentWhenAuthorAlreadyExist() {
+    UUID bookId = UUID.randomUUID();
+    UUID authorId = UUID.randomUUID();
+
+    Author author = new Author();
+    author.setId(authorId);
+
+    Book book = new Book();
+    book.setId(bookId);
+    book.setPages(100);
+    book.getAuthorBooks().add(new AuthorBook(author, book));
+
+    when(bookRepository.findById(bookId)).thenReturn(Optional.of(book));
+    when(authorRepository.findById(authorId)).thenReturn(Optional.of(author));
+    when(bookRepository.findByIdHydrated(bookId)).thenReturn(Optional.of(book));
+
+    BookResponse result = bookService.addAuthorToBook(bookId, authorId);
+
+    assertEquals(1, book.getAuthorBooks().size());
+    assertEquals(1, result.authors().size());
+    assertEquals(authorId, result.authors().getFirst().id());
+    verify(bookRepository, never()).save(any());
   }
 
   @Test

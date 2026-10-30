@@ -221,7 +221,7 @@ public class BookControllerTest {
 		when(bookService.addAuthorToBook(bookId, authorId)).thenReturn(book);
 
 		mockMvc
-				.perform(post("/api/books/{id}/authors/{authorId}", bookId, authorId))
+				.perform(put("/api/books/{id}/authors/{authorId}", bookId, authorId))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(bookId.toString()))
 				.andExpect(jsonPath("$.authors[0].id").value(authorId.toString()));
@@ -276,7 +276,7 @@ public class BookControllerTest {
 				.thenThrow(duplicateConstraintViolation("uq_author_book"));
 
 		mockMvc
-				.perform(post("/api/books/{id}/authors/{authorId}", bookId, authorId))
+				.perform(put("/api/books/{id}/authors/{authorId}", bookId, authorId))
 				.andExpect(status().isConflict())
 				.andExpect(jsonPath("$.detail").value("This author is already associated with this book"));
 	}

@@ -49,7 +49,7 @@ public class BookController {
 
 	// --- Granular Sub-Resource Endpoints ---
 
-	@PostMapping("/{id}/authors/{authorId}")
+	@PutMapping("/{id}/authors/{authorId}")
 	@ResponseStatus(HttpStatus.OK)
 	public BookResponse addAuthorToBook(@PathVariable UUID id, @PathVariable UUID authorId) {
 		return bookService.addAuthorToBook(id, authorId);

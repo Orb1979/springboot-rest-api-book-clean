@@ -43,7 +43,7 @@ Base URL: `http://localhost:8080`, all bodies are JSON. IDs are UUIDs.
 | Book | POST | `/api/books` | 201 |
 | Book | PUT | `/api/books/{id}` | 200 |
 | Book | DELETE | `/api/books/{id}` | 204 |
-| Book | POST | `/api/books/{id}/authors/{authorId}` | 200, updated book |
+| Book | PUT | `/api/books/{id}/authors/{authorId}` | 200, updated book |
 | Book | DELETE | `/api/books/{id}/authors/{authorId}` | 200, updated book |
 | Book | DELETE | `/api/books/{id}/publisher` | 200, updated book |
 
