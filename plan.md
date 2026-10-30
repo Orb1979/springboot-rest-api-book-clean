@@ -206,7 +206,6 @@ Use Testcontainers so database behavior is tested against PostgreSQL rather than
 - Let the database generate neither UUIDs nor schema changes implicitly; generate UUIDs in the application and manage schema changes through Flyway.
 - Use transactions for operations that update multiple records.
 - Avoid adding pagination, authentication, caching, messaging, or complex abstractions in the initial version.
-- Avoid Lombok unless it clearly improves readability.
 
 ## 8. Definition of done
 
