@@ -81,7 +81,7 @@ Validation rules, per field:
 - **`subTitle`** (book) — required, max 500 chars
 - **`description`** (book) — optional, max 5000 chars
 - **`pages`** (book) — required, must be greater than 0 (`@Positive`)
-- **`isbn`** (book) — optional, max 20 chars, unique in the database
+- **`isbn`** (book) — optional, max 20 chars, unique in the database (a duplicate returns 409)
 - **`publisherId`** (book) — optional UUID; when present it must reference an existing publisher (checked in the service)
 - **`authorIds`** (book) — optional list of UUIDs; when present every entry must reference an existing author (checked in the service, in one batch)
 
@@ -117,7 +117,16 @@ Errors use RFC 7807 `ProblemDetail`:
 
 // 400 — bean validation failures are joined into detail
 { "type": "about:blank", "title": "Bad Request", "status": 400, "detail": "title: must not be blank", "instance": "/api/books" }
+
+// 409 — database unique constraint violations
+{ "type": "about:blank", "title": "Conflict", "status": 409, "detail": "A book with this ISBN already exists", "instance": "/api/books" }
 ```
+
+**409 Conflict** covers constraint violations detected by the database: a duplicate
+ISBN on `book`, and a duplicate author–book link in `author_book` (possible only under
+concurrent requests — single-threaded, associating the same author twice is an
+idempotent no-op). Unknown or unrelated constraint violations return a generic
+409 message without leaking schema details.
 
 ## Update semantics: omitted vs. empty vs. explicit
 

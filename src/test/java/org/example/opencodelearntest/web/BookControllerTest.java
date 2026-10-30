@@ -6,11 +6,13 @@ import org.example.opencodelearntest.dto.BookResponse;
 import org.example.opencodelearntest.dto.PublisherResponse;
 import org.example.opencodelearntest.exception.ResourceNotFoundException;
 import org.example.opencodelearntest.service.BookService;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -253,7 +255,54 @@ public class BookControllerTest {
 		verify(bookService).removePublisherFromBook(bookId);
 	}
 
+	// --- Conflict Handling (database constraint violations) ---
+
+	@Test
+	void createBookReturnsConflictOnDuplicateIsbn() throws Exception {
+		String requestJson = toRequestJson("New Book", "Sub", "desc", 123, "isbn-2");
+
+		when(bookService.createBook(any(BookRequest.class)))
+				.thenThrow(duplicateConstraintViolation("book_isbn_key"));
+
+		mockMvc
+				.perform(post("/api/books").contentType("application/json").content(requestJson))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.detail").value("A book with this ISBN already exists"));
+	}
+
+	@Test
+	void addAuthorToBookReturnsConflictOnDuplicateAssociation() throws Exception {
+		when(bookService.addAuthorToBook(bookId, authorId))
+				.thenThrow(duplicateConstraintViolation("uq_author_book"));
+
+		mockMvc
+				.perform(post("/api/books/{id}/authors/{authorId}", bookId, authorId))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.detail").value("This author is already associated with this book"));
+	}
+
+	@Test
+	void createBookReturnsGenericConflictForUnknownConstraint() throws Exception {
+		String requestJson = toRequestJson("New Book", "Sub", "desc", 123, "isbn-2");
+
+		when(bookService.createBook(any(BookRequest.class)))
+				.thenThrow(new DataIntegrityViolationException("violated some constraint"));
+
+		mockMvc
+				.perform(post("/api/books").contentType("application/json").content(requestJson))
+				.andExpect(status().isConflict())
+				.andExpect(jsonPath("$.detail").value("The request conflicts with existing data"));
+	}
+
 	// --- Helper Methods ---
+
+	// Simulates what Spring wraps when a unique constraint fires at flush time:
+	// a Hibernate ConstraintViolationException naming the violated constraint.
+	private DataIntegrityViolationException duplicateConstraintViolation(String constraintName) {
+		var hibernate =
+				new ConstraintViolationException("duplicate key", null, constraintName);
+		return new DataIntegrityViolationException("could not execute statement", hibernate);
+	}
 
 	private String toRequestJson(
 			String title, String subTitle, String description, int pages, String isbn) {

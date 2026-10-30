@@ -2,6 +2,8 @@ package org.example.opencodelearntest.web;
 
 import org.example.opencodelearntest.exception.BadRequestException;
 import org.example.opencodelearntest.exception.ResourceNotFoundException;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -21,6 +23,22 @@ public class ApiExceptionHandler {
 	@ExceptionHandler(BadRequestException.class)
 	public ProblemDetail handleBadException(BadRequestException exception) {
 		return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+	}
+
+	// Translates database constraint violations into 409 responses
+	// (without leaking constraint or schema details to the client)
+	@ExceptionHandler(DataIntegrityViolationException.class)
+	public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException exception) {
+		String detail = "The request conflicts with existing data";
+
+		if (exception.getCause() instanceof ConstraintViolationException hibernate) {
+			detail = switch (hibernate.getConstraintName() == null ? "" : hibernate.getConstraintName()) {
+				case "book_isbn_key" -> "A book with this ISBN already exists";
+				case "uq_author_book" -> "This author is already associated with this book";
+				default -> detail;
+			};
+		}
+		return ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, detail);
 	}
 
 	@ExceptionHandler(MethodArgumentNotValidException.class)
