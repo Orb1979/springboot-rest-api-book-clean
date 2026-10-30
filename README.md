@@ -17,10 +17,14 @@ The schema is managed by Flyway (`src/main/resources/db/migration`), not by Hibe
 
 | Relationship | Cardinality | Implementation |
 |---|---|---|
-| Publisher → Book | 1 : 0..N | `book.publisher_id` FK |
+| Publisher → Book | 1 : 0..N | `book.publisher_id` FK, `ON DELETE SET NULL` |
 | Author ↔ Book | N : M | `author_book` join table, mapped as its own `AuthorBook` entity |
 
 The author–book link is mapped as a **join entity** instead of `@ManyToMany` see [Design notes](#design-notes).
+
+Deleting a publisher does **not** delete or block its books: the foreign key is declared
+`ON DELETE SET NULL` (`V2__publisher_on_delete_set_null.sql`), so the books survive and
+simply become unassigned (`"publisher": null`). See [Deleting a publisher](#deleting-a-publisher).
 
 ## API overview
 
@@ -127,6 +131,33 @@ ISBN on `book`, and a duplicate author–book link in `author_book` (possible on
 concurrent requests — single-threaded, associating the same author twice is an
 idempotent no-op). Unknown or unrelated constraint violations return a generic
 409 message without leaking schema details.
+
+## Deleting a publisher
+
+`DELETE /api/publishers/{id}` returns `204 No Content` even when the publisher still has
+books. The books are **not** deleted and the request is **not** rejected — they are
+simply unassigned:
+
+```
+before                                    after DELETE /api/publishers/{publisherId}
+──────                                    ───────────────────────────────────────────
+book "Effective Java"  publisher_id: P    book "Effective Java"  publisher_id: NULL
+publisher P            name: Manning      (publisher P no longer exists)
+```
+
+This is enforced by the database, not by application code: `V2__publisher_on_delete_set_null.sql`
+recreates `fk_book_publisher` with `ON DELETE SET NULL`. `PublisherService.deletePublisher`
+therefore stays a plain existence check + delete, and Hibernate's `ddl-auto=validate`
+is unaffected (it validates tables and columns, not FK actions).
+
+Consequences worth remembering:
+
+- A book may end up with no publisher through no action of its own — `publisher` in the
+  response is `null`, which is the same representation as a book that never had one.
+- To keep books assigned, reassign them (`PUT /api/books/{id}` with a new `publisherId`)
+  before deleting the publisher.
+- Only `DELETE /api/publishers/{id}` triggers this. `DELETE /api/books/{id}` is unrelated
+  and deletes the book (and its author links, via `ON DELETE CASCADE` on `author_book`).
 
 ## Update semantics: omitted vs. empty vs. explicit
 
