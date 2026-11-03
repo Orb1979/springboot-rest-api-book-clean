@@ -1,4 +1,4 @@
-# open-code-learn-test
+# Rest api books
 
 A small library catalogue REST API — publishers, authors, and books \
 Flyway migrations, and testing (JUnit 5, AssertJ, Mockito, `@WebMvcTest`/`@DataJpaTest` slices).

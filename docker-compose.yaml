@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:17
-    container_name: postgres-opencode-learn-db
+    container_name: postgres-books
     restart: unless-stopped
 
     environment:
