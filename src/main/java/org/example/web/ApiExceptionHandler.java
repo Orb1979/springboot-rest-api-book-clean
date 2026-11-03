@@ -1,7 +1,7 @@
 package org.example.web;
 
-import org.example.exception.BadRequestException;
-import org.example.exception.ResourceNotFoundException;
+import org.example.application.exception.BadRequestException;
+import org.example.application.exception.ResourceNotFoundException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
