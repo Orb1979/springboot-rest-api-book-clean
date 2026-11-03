@@ -2,9 +2,13 @@ package org.example.web;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.dto.AuthorRequest;
-import org.example.dto.AuthorResponse;
-import org.example.service.AuthorService;
+import org.example.application.author.CreateAuthorUseCase;
+import org.example.application.author.DeleteAuthorUseCase;
+import org.example.application.author.GetAuthorUseCase;
+import org.example.application.author.ListAuthorsUseCase;
+import org.example.application.author.UpdateAuthorUseCase;
+import org.example.application.dto.AuthorRequest;
+import org.example.application.dto.AuthorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,33 +19,37 @@ import java.util.UUID;
 @RequestMapping("api/authors")
 @RequiredArgsConstructor
 public class AuthorController {
-	private final AuthorService authorService;
+	private final ListAuthorsUseCase listAuthors;
+	private final GetAuthorUseCase getAuthor;
+	private final CreateAuthorUseCase createAuthor;
+	private final UpdateAuthorUseCase updateAuthor;
+	private final DeleteAuthorUseCase deleteAuthor;
 
 	@GetMapping
 	public List<AuthorResponse> getAllAuthors() {
-		return authorService.getAllAuthors();
+		return listAuthors.getAllAuthors();
 	}
 
 	@GetMapping("/{id}")
 	public AuthorResponse getAuthorById(@PathVariable UUID id) {
-		return authorService.getAuthorById(id);
+		return getAuthor.getAuthorById(id);
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public AuthorResponse createAuthor(@Valid @RequestBody AuthorRequest authorRequest) {
-		return authorService.createAuthor(authorRequest);
+		return createAuthor.createAuthor(authorRequest);
 	}
 
 	@PutMapping("/{id}")
 	public AuthorResponse updateAuthor(
 			@PathVariable UUID id, @Valid @RequestBody AuthorRequest authorRequest) {
-		return authorService.updateAuthor(id, authorRequest);
+		return updateAuthor.updateAuthor(id, authorRequest);
 	}
 
 	@DeleteMapping("{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void deleteAuthor(@PathVariable UUID id) {
-		authorService.deleteAuthor(id);
+		deleteAuthor.deleteAuthor(id);
 	}
 }

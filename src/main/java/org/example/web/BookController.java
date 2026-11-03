@@ -2,9 +2,17 @@ package org.example.web;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.dto.BookRequest;
-import org.example.dto.BookResponse;
-import org.example.service.BookService;
+import org.example.application.book.AddAuthorToBookUseCase;
+import org.example.application.book.CreateBookUseCase;
+import org.example.application.book.DeleteBookUseCase;
+import org.example.application.book.GetBookUseCase;
+import org.example.application.book.ListBooksUseCase;
+import org.example.application.book.RemoveAuthorFromBookUseCase;
+import org.example.application.book.RemovePublisherFromBookUseCase;
+import org.example.application.book.ReplaceAuthorsUseCase;
+import org.example.application.book.UpdateBookUseCase;
+import org.example.application.dto.BookRequest;
+import org.example.application.dto.BookResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,36 +23,44 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @RequestMapping("/api/books")
 public class BookController {
-	private final BookService bookService;
+	private final ListBooksUseCase listBooks;
+	private final GetBookUseCase getBook;
+	private final CreateBookUseCase createBook;
+	private final UpdateBookUseCase updateBook;
+	private final DeleteBookUseCase deleteBook;
+	private final AddAuthorToBookUseCase addAuthorToBook;
+	private final RemoveAuthorFromBookUseCase removeAuthorFromBook;
+	private final ReplaceAuthorsUseCase replaceAuthors;
+	private final RemovePublisherFromBookUseCase removePublisherFromBook;
 
 	@GetMapping
 	@ResponseStatus(HttpStatus.OK)
 	public List<BookResponse> getAllBooks() {
-		return bookService.getAllBooks();
+		return listBooks.getAllBooks();
 	}
 
 	@GetMapping("/{id}")
 	@ResponseStatus(HttpStatus.OK)
 	public BookResponse getBookById(@PathVariable UUID id) {
-		return bookService.getBookById(id);
+		return getBook.getBookById(id);
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public BookResponse createBook(@Valid @RequestBody BookRequest bookRequestDto) {
-		return bookService.createBook(bookRequestDto);
+		return createBook.createBook(bookRequestDto);
 	}
 
 	@PutMapping("/{id}")
 	@ResponseStatus(HttpStatus.OK)
 	public BookResponse updateBook(@PathVariable UUID id, @Valid @RequestBody BookRequest bookRequestDto) {
-		return bookService.updateBook(id, bookRequestDto);
+		return updateBook.updateBook(id, bookRequestDto);
 	}
 
 	@DeleteMapping("/{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void deleteBook(@PathVariable UUID id) {
-		bookService.deleteBook(id);
+		deleteBook.deleteBook(id);
 	}
 
 	// --- Granular Sub-Resource Endpoints ---
@@ -52,25 +68,25 @@ public class BookController {
 	@PutMapping("/{id}/authors/{authorId}")
 	@ResponseStatus(HttpStatus.OK)
 	public BookResponse addAuthorToBook(@PathVariable UUID id, @PathVariable UUID authorId) {
-		return bookService.addAuthorToBook(id, authorId);
+		return addAuthorToBook.addAuthorToBook(id, authorId);
 	}
 
 	// Convenience controller, could be replaced with addAuthorToBook and removeAuthorFromBook
 	@PutMapping("/{id}/authors")
 	@ResponseStatus(HttpStatus.OK)
 	public BookResponse replaceAuthors(@PathVariable UUID id, @RequestBody List<UUID> authorIds) {
-		return bookService.replaceAuthors(id, authorIds);
+		return replaceAuthors.replaceAuthors(id, authorIds);
 	}
 
 	@DeleteMapping("/{id}/authors/{authorId}")
 	@ResponseStatus(HttpStatus.OK)
 	public BookResponse removeAuthorFromBook(@PathVariable UUID id, @PathVariable UUID authorId) {
-		return bookService.removeAuthorFromBook(id, authorId);
+		return removeAuthorFromBook.removeAuthorFromBook(id, authorId);
 	}
 
 	@DeleteMapping("/{id}/publisher")
 	@ResponseStatus(HttpStatus.OK)
 	public BookResponse removePublisherFromBook(@PathVariable UUID id) {
-		return bookService.removePublisherFromBook(id);
+		return removePublisherFromBook.removePublisherFromBook(id);
 	}
 }
