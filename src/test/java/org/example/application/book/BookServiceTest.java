@@ -3,7 +3,6 @@ package org.example.application.book;
 import org.example.application.dto.BookRequest;
 import org.example.application.dto.BookResponse;
 import org.example.domain.Author;
-import org.example.domain.AuthorBook;
 import org.example.domain.Book;
 import org.example.domain.Publisher;
 import org.example.application.exception.BadRequestException;
@@ -44,8 +43,8 @@ class BookServiceTest {
     Book book1 = new Book();
     book1.setId(UUID.randomUUID());
     book1.setPages(100);
-    book1.getAuthorBooks().add(new AuthorBook(author1, book1));
-    book1.getAuthorBooks().add(new AuthorBook(author2, book1));
+    book1.addAuthor(author1);
+    book1.addAuthor(author2);
 
     when(bookRepository.findAllWithDetailsBy()).thenReturn(List.of(book1));
 
@@ -78,7 +77,7 @@ class BookServiceTest {
     book.setId(bookId);
     book.setTitle("title");
     book.setPages(0);
-    book.getAuthorBooks().add(new AuthorBook(author, book));
+    book.addAuthor(author);
 
     when(bookRepository.findWithDetailsById(bookId)).thenReturn(Optional.of(book));
 
@@ -218,7 +217,7 @@ class BookServiceTest {
     Book existingBook = new Book();
     existingBook.setId(bookId);
     existingBook.setPublisher(oldPublisher);
-    existingBook.getAuthorBooks().add(new AuthorBook(oldAuthor, existingBook));
+    existingBook.addAuthor(oldAuthor);
 
     BookRequest request =
         new BookRequest(
@@ -264,7 +263,7 @@ class BookServiceTest {
     Book existingBook = new Book();
     existingBook.setId(bookId);
     existingBook.setPages(100);
-    existingBook.getAuthorBooks().add(new AuthorBook(existingAuthor, existingBook));
+    existingBook.addAuthor(existingAuthor);
 
     BookRequest request = new BookRequest("title", "subtitle", "description", 100, "isbn", null, null);
 
@@ -288,7 +287,7 @@ class BookServiceTest {
     Book existingBook = new Book();
     existingBook.setId(bookId);
     existingBook.setPages(100);
-    existingBook.getAuthorBooks().add(new AuthorBook(existingAuthor, existingBook));
+    existingBook.addAuthor(existingAuthor);
 
     BookRequest request = new BookRequest("title", "subtitle", "description", 100, "isbn", null, List.of());
 
@@ -299,7 +298,7 @@ class BookServiceTest {
     BookResponse result = bookService.updateBook(bookId, request);
 
     assertEquals(0, result.authors().size());
-    assertTrue(existingBook.getAuthorBooks().isEmpty());
+    assertTrue(existingBook.getAuthors().isEmpty());
     verify(bookRepository).save(existingBook);
   }
 
@@ -381,7 +380,7 @@ class BookServiceTest {
     BookResponse result = bookService.addAuthorToBook(bookId, authorId);
 
     assertNotNull(result);
-    assertEquals(1, book.getAuthorBooks().size());
+    assertEquals(1, book.getAuthors().size());
     verify(bookRepository).save(book);
     verify(bookRepository).findWithDetailsById(bookId);
   }
@@ -397,7 +396,7 @@ class BookServiceTest {
     Book book = new Book();
     book.setId(bookId);
     book.setPages(100);
-    book.getAuthorBooks().add(new AuthorBook(author, book));
+    book.addAuthor(author);
 
     when(bookRepository.findById(bookId)).thenReturn(Optional.of(book));
     when(authorRepository.findById(authorId)).thenReturn(Optional.of(author));
@@ -405,7 +404,7 @@ class BookServiceTest {
 
     BookResponse result = bookService.addAuthorToBook(bookId, authorId);
 
-    assertEquals(1, book.getAuthorBooks().size());
+    assertEquals(1, book.getAuthors().size());
     assertEquals(1, result.authors().size());
     assertEquals(authorId, result.authors().getFirst().id());
     verify(bookRepository, never()).save(any());
@@ -422,7 +421,7 @@ class BookServiceTest {
     Book book = new Book();
     book.setId(bookId);
     book.setPages(100);
-    book.getAuthorBooks().add(new AuthorBook(author, book));
+    book.addAuthor(author);
 
     when(bookRepository.findById(bookId)).thenReturn(Optional.of(book));
     when(bookRepository.findWithDetailsById(bookId)).thenReturn(Optional.of(book));
@@ -430,7 +429,7 @@ class BookServiceTest {
     BookResponse result = bookService.removeAuthorFromBook(bookId, authorId);
 
     assertNotNull(result);
-    assertTrue(book.getAuthorBooks().isEmpty());
+    assertTrue(book.getAuthors().isEmpty());
     verify(bookRepository).save(book);
     verify(bookRepository).findWithDetailsById(bookId);
   }
@@ -472,7 +471,7 @@ class BookServiceTest {
     Book book = new Book();
     book.setId(bookId);
     book.setPages(100);
-    book.getAuthorBooks().add(new AuthorBook(oldAuthor, book));
+    book.addAuthor(oldAuthor);
 
     when(bookRepository.findWithDetailsById(bookId)).thenReturn(Optional.of(book));
     when(authorRepository.findAllById(List.of(newAuthorId))).thenReturn(List.of(newAuthor));

@@ -5,22 +5,19 @@ import org.example.application.dto.AuthorResponse;
 import org.example.application.dto.BookRequest;
 import org.example.application.dto.BookResponse;
 import org.example.application.dto.PublisherResponse;
-import org.example.domain.Author;
-import org.example.domain.AuthorBook;
-import org.example.domain.Book;
-import org.example.domain.Publisher;
 import org.example.application.exception.BadRequestException;
 import org.example.application.exception.ResourceNotFoundException;
+import org.example.domain.Author;
 import org.example.domain.AuthorRepository;
+import org.example.domain.Book;
 import org.example.domain.BookRepository;
+import org.example.domain.Publisher;
 import org.example.domain.PublisherRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -49,7 +46,18 @@ public class BookService implements
 	}
 
 	public BookResponse createBook(BookRequest bookRequest) {
-		Book book = toEntity(bookRequest);
+		Book book = new Book();
+		book.setTitle(bookRequest.title());
+		book.setSubTitle(bookRequest.subTitle());
+		book.setDescription(bookRequest.description());
+		book.setPages(bookRequest.pages());
+		book.setIsbn(bookRequest.isbn());
+		if (bookRequest.publisherId() != null) {
+			book.setPublisher(resolvePublisher(bookRequest.publisherId()));
+		}
+		if (bookRequest.authorIds() != null) {
+			resolveAuthors(bookRequest.authorIds()).forEach(book::addAuthor);
+		}
 		Book saved = bookRepository.save(book);
 		return toResponseDto(saved);
 	}
@@ -68,8 +76,11 @@ public class BookService implements
 		if (bookRequestDto.publisherId() != null) {
 			existingBook.setPublisher(resolvePublisher(bookRequestDto.publisherId()));
 		}
-
-		syncAuthors(existingBook, bookRequestDto.authorIds());
+		// Omitted authorIds keeps the current authors; an empty list clears them
+		if (bookRequestDto.authorIds() != null) {
+			existingBook.replaceAuthors(
+					resolveAuthors(bookRequestDto.authorIds().stream().distinct().toList()));
+		}
 
 		Book saved = bookRepository.save(existingBook);
 		return toResponseDto(saved);
@@ -106,9 +117,7 @@ public class BookService implements
 						.findById(authorId)
 						.orElseThrow(() -> new ResourceNotFoundException("Author not found"));
 
-		boolean exists = book.getAuthorBooks().stream().anyMatch(ab -> ab.getAuthor().getId().equals(authorId));
-		if (!exists) {
-			book.getAuthorBooks().add(new AuthorBook(author, book));
+		if (book.addAuthor(author)) {
 			bookRepository.save(book);
 		}
 		return getBookById(bookId);
@@ -119,7 +128,7 @@ public class BookService implements
 		Book book = bookRepository.findById(bookId)
 						.orElseThrow(() -> new ResourceNotFoundException("Book not found"));
 
-		book.getAuthorBooks().removeIf(ab -> ab.getAuthor().getId().equals(authorId));
+		book.removeAuthor(authorId);
 		bookRepository.save(book);
 		return getBookById(bookId);
 	}
@@ -133,7 +142,7 @@ public class BookService implements
 		Book book = bookRepository.findWithDetailsById(bookId)
 						.orElseThrow(() -> new ResourceNotFoundException("Book not found"));
 
-		syncAuthors(book, authorIds);
+		book.replaceAuthors(resolveAuthors(authorIds.stream().distinct().toList()));
 
 		Book saved = bookRepository.save(book);
 		return toResponseDto(saved);
@@ -155,8 +164,7 @@ public class BookService implements
 						book.getPublisher().getId(),
 						book.getPublisher().getName()
 				) : null,
-				book.getAuthorBooks().stream()
-						.map(AuthorBook::getAuthor)
+				book.getAuthors().stream()
 						.map(author -> new AuthorResponse(
 								author.getId(),
 								author.getFirstName(),
@@ -164,27 +172,6 @@ public class BookService implements
 								author.getBirthDate()
 						)).toList()
 		);
-	}
-
-	private Book toEntity(BookRequest dto) {
-		if (dto == null) {
-			return null;
-		}
-
-		Book book = new Book();
-		book.setTitle(dto.title());
-		book.setSubTitle(dto.subTitle());
-		book.setDescription(dto.description());
-		book.setPages(dto.pages());
-		book.setIsbn(dto.isbn());
-		if (dto.publisherId() != null) {
-			book.setPublisher(resolvePublisher(dto.publisherId()));
-		}
-		if (dto.authorIds() != null) {
-			resolveAuthors(dto.authorIds())
-					.forEach(author -> book.getAuthorBooks().add(new AuthorBook(author, book)));
-		};
-		return book;
 	}
 
 	// Callers must guard for null — a null publisher means "keep/unset", never "look it up".
@@ -200,31 +187,5 @@ public class BookService implements
 			throw new ResourceNotFoundException("One or more authors not found");
 		}
 		return authors;
-	}
-
-	// Update semantics (see README "Omitted vs. empty vs. explicit"):
-	// - omitted/null authorIds -> keep the current authors
-	// - empty list -> clear all author links
-	// - non-empty list -> replace with exactly these authors; unknown ids are rejected
-	private void syncAuthors(Book book, List<UUID> newAuthorIds) {
-		if (newAuthorIds == null) {
-			return;
-		}
-
-		// Resolve all desired authors in one batch query; fails if any id is unknown
-		List<Author> desiredAuthors = resolveAuthors(newAuthorIds.stream().distinct().toList());
-
-		// Remove links to authors that are no longer in the request
-		Set<UUID> desired = desiredAuthors.stream().map(Author::getId).collect(Collectors.toSet());
-		book.getAuthorBooks().removeIf(ab -> !desired.contains(ab.getAuthor().getId()));
-
-		// Add links for authors not yet on the book
-		Set<UUID> current =
-				book.getAuthorBooks().stream().map(ab -> ab.getAuthor().getId()).collect(Collectors.toSet());
-		desiredAuthors.forEach(author -> {
-			if (!current.contains(author.getId())) {
-				book.getAuthorBooks().add(new AuthorBook(author, book));
-			}
-		});
 	}
 }
