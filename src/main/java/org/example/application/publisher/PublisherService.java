@@ -13,12 +13,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class PublisherService implements
-		CreatePublisherUseCase,
-		GetPublisherUseCase,
-		ListPublishersUseCase,
-		UpdatePublisherUseCase,
-		DeletePublisherUseCase {
+public class PublisherService implements PublisherUseCase {
 	private final PublisherRepository publisherRepository;
 
 	public List<PublisherResponse> getAllPublishers() {

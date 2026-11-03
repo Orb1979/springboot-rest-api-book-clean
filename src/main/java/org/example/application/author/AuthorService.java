@@ -13,12 +13,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class AuthorService implements
-		CreateAuthorUseCase,
-		GetAuthorUseCase,
-		ListAuthorsUseCase,
-		UpdateAuthorUseCase,
-		DeleteAuthorUseCase {
+public class AuthorService implements AuthorUseCase {
 	private final AuthorRepository authorRepository;
 
 	public List<AuthorResponse> getAllAuthors() {

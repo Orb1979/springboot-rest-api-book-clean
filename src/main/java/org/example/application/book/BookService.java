@@ -21,16 +21,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class BookService implements
-		CreateBookUseCase,
-		GetBookUseCase,
-		ListBooksUseCase,
-		UpdateBookUseCase,
-		DeleteBookUseCase,
-		AddAuthorToBookUseCase,
-		RemoveAuthorFromBookUseCase,
-		ReplaceAuthorsUseCase,
-		RemovePublisherFromBookUseCase {
+public class BookService implements BookUseCase {
 	private final BookRepository bookRepository;
 	private final PublisherRepository publisherRepository;
 	private final AuthorRepository authorRepository;

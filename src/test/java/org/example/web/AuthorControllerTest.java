@@ -1,10 +1,6 @@
 package org.example.web;
 
-import org.example.application.author.CreateAuthorUseCase;
-import org.example.application.author.DeleteAuthorUseCase;
-import org.example.application.author.GetAuthorUseCase;
-import org.example.application.author.ListAuthorsUseCase;
-import org.example.application.author.UpdateAuthorUseCase;
+import org.example.application.author.AuthorUseCase;
 import org.example.application.dto.AuthorRequest;
 import org.example.application.dto.AuthorResponse;
 import org.example.application.exception.ResourceNotFoundException;
@@ -34,18 +30,14 @@ class AuthorControllerTest {
 
 	@Autowired private MockMvc mockMvc;
 
-	@MockitoBean private ListAuthorsUseCase listAuthors;
-	@MockitoBean private GetAuthorUseCase getAuthor;
-	@MockitoBean private CreateAuthorUseCase createAuthor;
-	@MockitoBean private UpdateAuthorUseCase updateAuthor;
-	@MockitoBean private DeleteAuthorUseCase deleteAuthor;
+	@MockitoBean private AuthorUseCase authorUseCase;
 
 	@Test
 	void getAllAuthorsReturnsAuthor() throws Exception {
 		UUID uuid = UUID.randomUUID();
 		AuthorResponse response = new AuthorResponse(uuid, "John", "Doe", LocalDate.of(1990, 1, 1));
 
-		when(listAuthors.getAllAuthors()).thenReturn(List.of(response));
+		when(authorUseCase.getAllAuthors()).thenReturn(List.of(response));
 
 		mockMvc.perform(get("/api/authors"))
 				.andExpect(status().isOk())
@@ -57,7 +49,7 @@ class AuthorControllerTest {
 
 	@Test
 	void getAllAuthorsReturnsEmptyList() throws Exception {
-		when(listAuthors.getAllAuthors()).thenReturn(List.of());
+		when(authorUseCase.getAllAuthors()).thenReturn(List.of());
 
 		mockMvc.perform(get("/api/authors"))
 				.andExpect(status().isOk())
@@ -69,7 +61,7 @@ class AuthorControllerTest {
 		UUID uuid = UUID.randomUUID();
 		AuthorResponse response = new AuthorResponse(uuid, "John", "Doe", LocalDate.of(1990, 1, 1));
 
-		when(getAuthor.getAuthorById(uuid)).thenReturn(response);
+		when(authorUseCase.getAuthorById(uuid)).thenReturn(response);
 
 		mockMvc.perform(get("/api/authors/{id}", uuid))
 				.andExpect(status().isOk())
@@ -81,7 +73,7 @@ class AuthorControllerTest {
 	@Test
 	void getAuthorByIdReturnsNotFound() throws Exception {
 		UUID uuid = UUID.randomUUID();
-		when(getAuthor.getAuthorById(uuid)).thenThrow(new ResourceNotFoundException("Author not found, id: " + uuid));
+		when(authorUseCase.getAuthorById(uuid)).thenThrow(new ResourceNotFoundException("Author not found, id: " + uuid));
 
 		mockMvc.perform(get("/api/authors/{id}", uuid))
 				.andExpect(status().isNotFound())
@@ -95,7 +87,7 @@ class AuthorControllerTest {
 				"""
 				{"firstName":"John","lastName":"Doe","birthDate":"1990-01-01"}
 				""";
-		when(createAuthor.createAuthor(any(AuthorRequest.class))).thenReturn(response);
+		when(authorUseCase.createAuthor(any(AuthorRequest.class))).thenReturn(response);
 
 		mockMvc
 				.perform(post("/api/authors").contentType("application/json").content(requestJson))
@@ -115,7 +107,7 @@ class AuthorControllerTest {
 				.andExpect(jsonPath("$.detail", containsString("firstName: must not be blank")))
 				.andExpect(jsonPath("$.detail", containsString("lastName: must not be blank")));
 
-		verify(createAuthor, never()).createAuthor(any());
+		verify(authorUseCase, never()).createAuthor(any());
 	}
 
 	@Test
@@ -126,7 +118,7 @@ class AuthorControllerTest {
 				"""
 				{"firstName":"Jane","lastName":"Doe","birthDate":"1992-02-02"}
 				""";
-		when(updateAuthor.updateAuthor(eq(id), any(AuthorRequest.class))).thenReturn(response);
+		when(authorUseCase.updateAuthor(eq(id), any(AuthorRequest.class))).thenReturn(response);
 
 		mockMvc
 				.perform(
@@ -147,7 +139,7 @@ class AuthorControllerTest {
 				.andExpect(jsonPath("$.detail", containsString("firstName: must not be blank")))
 				.andExpect(jsonPath("$.detail", containsString("lastName: must not be blank")));
 
-		verify(updateAuthor, never()).updateAuthor(any(), any());
+		verify(authorUseCase, never()).updateAuthor(any(), any());
 	}
 
 	@Test
@@ -157,7 +149,7 @@ class AuthorControllerTest {
 				"""
 				{"firstName":"Jane","lastName":"Doe","birthDate":"1992-02-02"}
 				""";
-		when(updateAuthor.updateAuthor(eq(id), any(AuthorRequest.class))).
+		when(authorUseCase.updateAuthor(eq(id), any(AuthorRequest.class))).
 				thenThrow(new ResourceNotFoundException("Author not found, id: " + id));
 
 		mockMvc
@@ -171,11 +163,11 @@ class AuthorControllerTest {
 	void deleteAuthorReturnsNoContent() throws Exception {
 		UUID id = UUID.randomUUID();
 
-		doNothing().when(deleteAuthor).deleteAuthor(id);
+		doNothing().when(authorUseCase).deleteAuthor(id);
 
 		mockMvc.perform(delete("/api/authors/{id}", id)).andExpect(status().isNoContent());
 
-		verify(deleteAuthor).deleteAuthor(id);
+		verify(authorUseCase).deleteAuthor(id);
 	}
 
 	@Test
@@ -183,7 +175,7 @@ class AuthorControllerTest {
 		UUID id = UUID.randomUUID();
 
 		doThrow(new ResourceNotFoundException("Author not found, id: " + id))
-				.when(deleteAuthor).deleteAuthor(id);
+				.when(authorUseCase).deleteAuthor(id);
 
 		mockMvc.perform(delete("/api/authors/{id}", id)).andExpect(status().isNotFound());
 	}

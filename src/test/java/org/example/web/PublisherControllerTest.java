@@ -1,10 +1,6 @@
 package org.example.web;
 
-import org.example.application.publisher.CreatePublisherUseCase;
-import org.example.application.publisher.DeletePublisherUseCase;
-import org.example.application.publisher.GetPublisherUseCase;
-import org.example.application.publisher.ListPublishersUseCase;
-import org.example.application.publisher.UpdatePublisherUseCase;
+import org.example.application.publisher.PublisherUseCase;
 import org.example.application.dto.PublisherRequest;
 import org.example.application.dto.PublisherResponse;
 import org.example.application.exception.ResourceNotFoundException;
@@ -32,18 +28,14 @@ class PublisherControllerTest {
 
 	@Autowired private MockMvc mockMvc;
 
-	@MockitoBean private ListPublishersUseCase listPublishers;
-	@MockitoBean private GetPublisherUseCase getPublisher;
-	@MockitoBean private CreatePublisherUseCase createPublisher;
-	@MockitoBean private UpdatePublisherUseCase updatePublisher;
-	@MockitoBean private DeletePublisherUseCase deletePublisher;
+	@MockitoBean private PublisherUseCase publisherUseCase;
 
 	@Test
 	void getAllPublishersReturnsPublisher() throws Exception {
 		UUID uuid = UUID.randomUUID();
 		PublisherResponse response = new PublisherResponse(uuid, "goodreads");
 
-		when(listPublishers.getAllPublishers()).thenReturn(List.of(response));
+		when(publisherUseCase.getAllPublishers()).thenReturn(List.of(response));
 
 		mockMvc.perform(get("/api/publishers"))
 				.andExpect(status().isOk())
@@ -53,7 +45,7 @@ class PublisherControllerTest {
 
 	@Test
 	void getAllPublishersReturnsEmptyList() throws Exception {
-		when(listPublishers.getAllPublishers()).thenReturn(List.of());
+		when(publisherUseCase.getAllPublishers()).thenReturn(List.of());
 
 		mockMvc.perform(get("/api/publishers"))
 				.andExpect(status().isOk())
@@ -65,7 +57,7 @@ class PublisherControllerTest {
 		UUID uuid = UUID.randomUUID();
 		PublisherResponse response = new PublisherResponse(uuid, "goodreads");
 
-		when(getPublisher.getPublisherById(uuid)).thenReturn(response);
+		when(publisherUseCase.getPublisherById(uuid)).thenReturn(response);
 
 		mockMvc.perform(get("/api/publishers/{id}", uuid))
 				.andExpect(status().isOk())
@@ -76,7 +68,7 @@ class PublisherControllerTest {
 	@Test
 	void getPublishersByIdReturnsNotFound() throws Exception {
 		UUID uuid = UUID.randomUUID();
-		when(getPublisher.getPublisherById(uuid)).thenThrow(new ResourceNotFoundException("Publisher not found, id: " + uuid));
+		when(publisherUseCase.getPublisherById(uuid)).thenThrow(new ResourceNotFoundException("Publisher not found, id: " + uuid));
 
 		mockMvc.perform(get("/api/publishers/{id}", uuid))
 				.andExpect(status().isNotFound())
@@ -90,7 +82,7 @@ class PublisherControllerTest {
 				"""
 				{"name":"goodreads"}
 				""";
-		when(createPublisher.createPublisher(any(PublisherRequest.class))).thenReturn(response);
+		when(publisherUseCase.createPublisher(any(PublisherRequest.class))).thenReturn(response);
 
 		mockMvc
 				.perform(post("/api/publishers").contentType("application/json").content(requestJson))
@@ -108,7 +100,7 @@ class PublisherControllerTest {
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.detail").value("name: must not be blank"));
 
-		verify(createPublisher, never()).createPublisher(any());
+		verify(publisherUseCase, never()).createPublisher(any());
 	}
 
 	@Test
@@ -119,7 +111,7 @@ class PublisherControllerTest {
 				"""
 				{"name":"No Starch"}
 				""";
-		when(updatePublisher.updatePublisher(eq(id), any(PublisherRequest.class))).thenReturn(response);
+		when(publisherUseCase.updatePublisher(eq(id), any(PublisherRequest.class))).thenReturn(response);
 
 		mockMvc
 				.perform(
@@ -138,7 +130,7 @@ class PublisherControllerTest {
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.detail").value("name: must not be blank"));
 
-		verify(createPublisher, never()).createPublisher(any());
+		verify(publisherUseCase, never()).createPublisher(any());
 	}
 
 	@Test
@@ -148,7 +140,7 @@ class PublisherControllerTest {
 				"""
 				{"name":"No Starch"}
 				""";
-		when(updatePublisher.updatePublisher(eq(id), any(PublisherRequest.class))).thenThrow(new ResourceNotFoundException("Publisher not found, id: " + id));
+		when(publisherUseCase.updatePublisher(eq(id), any(PublisherRequest.class))).thenThrow(new ResourceNotFoundException("Publisher not found, id: " + id));
 
 		mockMvc
 				.perform(
@@ -161,11 +153,11 @@ class PublisherControllerTest {
 	void deletePublisherReturnsNoContent() throws Exception {
 		UUID id = UUID.randomUUID();
 
-		doNothing().when(deletePublisher).deletePublisher(id);
+		doNothing().when(publisherUseCase).deletePublisher(id);
 
 		mockMvc.perform(delete("/api/publishers/{id}", id)).andExpect(status().isNoContent());
 
-		verify(deletePublisher).deletePublisher(id);
+		verify(publisherUseCase).deletePublisher(id);
 	}
 
 	@Test
@@ -173,7 +165,7 @@ class PublisherControllerTest {
 		UUID id = UUID.randomUUID();
 
 		doThrow(new ResourceNotFoundException("Publisher not found, id: " + id))
-				.when(deletePublisher).deletePublisher(id);
+				.when(publisherUseCase).deletePublisher(id);
 
 		mockMvc.perform(delete("/api/publishers/{id}", id)).andExpect(status().isNotFound());
 	}

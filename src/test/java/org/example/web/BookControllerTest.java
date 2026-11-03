@@ -1,14 +1,6 @@
 package org.example.web;
 
-import org.example.application.book.AddAuthorToBookUseCase;
-import org.example.application.book.CreateBookUseCase;
-import org.example.application.book.DeleteBookUseCase;
-import org.example.application.book.GetBookUseCase;
-import org.example.application.book.ListBooksUseCase;
-import org.example.application.book.RemoveAuthorFromBookUseCase;
-import org.example.application.book.RemovePublisherFromBookUseCase;
-import org.example.application.book.ReplaceAuthorsUseCase;
-import org.example.application.book.UpdateBookUseCase;
+import org.example.application.book.BookUseCase;
 import org.example.application.dto.AuthorResponse;
 import org.example.application.dto.BookRequest;
 import org.example.application.dto.BookResponse;
@@ -42,15 +34,7 @@ public class BookControllerTest {
 	@Autowired
 	private MockMvc mockMvc;
 
-	@MockitoBean private ListBooksUseCase listBooks;
-	@MockitoBean private GetBookUseCase getBook;
-	@MockitoBean private CreateBookUseCase createBook;
-	@MockitoBean private UpdateBookUseCase updateBook;
-	@MockitoBean private DeleteBookUseCase deleteBook;
-	@MockitoBean private AddAuthorToBookUseCase addAuthorToBook;
-	@MockitoBean private RemoveAuthorFromBookUseCase removeAuthorFromBook;
-	@MockitoBean private RemovePublisherFromBookUseCase removePublisherFromBook;
-	@MockitoBean private ReplaceAuthorsUseCase replaceAuthors;
+	@MockitoBean private BookUseCase bookUseCase;
 
 	private UUID bookId;
 	private UUID publisherId;
@@ -67,7 +51,7 @@ public class BookControllerTest {
 	void getAllBooksReturnsBooks() throws Exception {
 		BookResponse book = createBookResponseDto(bookId, publisherId, authorId);
 
-		when(listBooks.getAllBooks()).thenReturn(List.of(book));
+		when(bookUseCase.getAllBooks()).thenReturn(List.of(book));
 
 		mockMvc
 				.perform(get("/api/books"))
@@ -80,7 +64,7 @@ public class BookControllerTest {
 
 	@Test
 	void getAllBooksReturnsEmptyList() throws Exception {
-		when(listBooks.getAllBooks()).thenReturn(List.of());
+		when(bookUseCase.getAllBooks()).thenReturn(List.of());
 
 		mockMvc
 				.perform(get("/api/books"))
@@ -93,7 +77,7 @@ public class BookControllerTest {
 	void getBookByIdReturnsBook() throws Exception {
 		BookResponse book = createBookResponseDto(bookId, publisherId, authorId);
 
-		when(getBook.getBookById(bookId)).thenReturn(book);
+		when(bookUseCase.getBookById(bookId)).thenReturn(book);
 
 		mockMvc
 				.perform(get("/api/books/{id}", bookId))
@@ -113,7 +97,7 @@ public class BookControllerTest {
 
 	@Test
 	void getBookByIdReturnsNotFound() throws Exception {
-		when(getBook.getBookById(bookId))
+		when(bookUseCase.getBookById(bookId))
 				.thenThrow(new ResourceNotFoundException("Book not found, id: " + bookId));
 
 		mockMvc
@@ -140,7 +124,7 @@ public class BookControllerTest {
 						"Doe",
 						null);
 
-		when(createBook.createBook(any(BookRequest.class))).thenReturn(created);
+		when(bookUseCase.createBook(any(BookRequest.class))).thenReturn(created);
 
 		mockMvc
 				.perform(post("/api/books").contentType("application/json").content(requestJson))
@@ -160,7 +144,7 @@ public class BookControllerTest {
 				.andExpect(status().isBadRequest())
 				.andExpect(jsonPath("$.detail").value("title: must not be blank"));
 
-		verify(createBook, never()).createBook(any());
+		verify(bookUseCase, never()).createBook(any());
 	}
 
 	@Test
@@ -181,7 +165,7 @@ public class BookControllerTest {
 						"Smith",
 						null);
 
-		when(updateBook.updateBook(eq(bookId), any(BookRequest.class))).thenReturn(updated);
+		when(bookUseCase.updateBook(eq(bookId), any(BookRequest.class))).thenReturn(updated);
 
 		mockMvc
 				.perform(
@@ -197,7 +181,7 @@ public class BookControllerTest {
 	void updateBookReturnsNotFound() throws Exception {
 		String requestJson = toRequestJson("Updated Book", "Sub", "desc", 200, "isbn");
 
-		when(updateBook.updateBook(eq(bookId), any(BookRequest.class)))
+		when(bookUseCase.updateBook(eq(bookId), any(BookRequest.class)))
 				.thenThrow(new ResourceNotFoundException("Book not found, id: " + bookId));
 
 		mockMvc
@@ -209,17 +193,17 @@ public class BookControllerTest {
 
 	@Test
 	void deleteBookReturnsOk() throws Exception {
-		doNothing().when(deleteBook).deleteBook(bookId);
+		doNothing().when(bookUseCase).deleteBook(bookId);
 
 		mockMvc.perform(delete("/api/books/{id}", bookId)).andExpect(status().isNoContent());
 
-		verify(deleteBook).deleteBook(bookId);
+		verify(bookUseCase).deleteBook(bookId);
 	}
 
 	@Test
 	void deleteBookReturnsNotFound() throws Exception {
 		doThrow(new ResourceNotFoundException("Book not found, id: " + bookId))
-				.when(deleteBook)
+				.when(bookUseCase)
 				.deleteBook(bookId);
 
 		mockMvc
@@ -233,7 +217,7 @@ public class BookControllerTest {
 	@Test
 	void addAuthorToBookReturnsBook() throws Exception {
 		BookResponse book = createBookResponseDto(bookId, publisherId, authorId);
-		when(addAuthorToBook.addAuthorToBook(bookId, authorId)).thenReturn(book);
+		when(bookUseCase.addAuthorToBook(bookId, authorId)).thenReturn(book);
 
 		mockMvc
 				.perform(put("/api/books/{id}/authors/{authorId}", bookId, authorId))
@@ -241,33 +225,33 @@ public class BookControllerTest {
 				.andExpect(jsonPath("$.id").value(bookId.toString()))
 				.andExpect(jsonPath("$.authors[0].id").value(authorId.toString()));
 
-		verify(addAuthorToBook).addAuthorToBook(bookId, authorId);
+		verify(bookUseCase).addAuthorToBook(bookId, authorId);
 	}
 
 	@Test
 	void removeAuthorFromBookReturnsBook() throws Exception {
 		BookResponse book = createBookResponseDto(bookId, publisherId, authorId);
-		when(removeAuthorFromBook.removeAuthorFromBook(bookId, authorId)).thenReturn(book);
+		when(bookUseCase.removeAuthorFromBook(bookId, authorId)).thenReturn(book);
 
 		mockMvc
 				.perform(delete("/api/books/{id}/authors/{authorId}", bookId, authorId))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(bookId.toString()));
 
-		verify(removeAuthorFromBook).removeAuthorFromBook(bookId, authorId);
+		verify(bookUseCase).removeAuthorFromBook(bookId, authorId);
 	}
 
 	@Test
 	void removePublisherFromBookReturnsBook() throws Exception {
 		BookResponse book = createBookResponseDto(bookId, publisherId, authorId);
-		when(removePublisherFromBook.removePublisherFromBook(bookId)).thenReturn(book);
+		when(bookUseCase.removePublisherFromBook(bookId)).thenReturn(book);
 
 		mockMvc
 				.perform(delete("/api/books/{id}/publisher", bookId))
 				.andExpect(status().isOk())
 				.andExpect(jsonPath("$.id").value(bookId.toString()));
 
-		verify(removePublisherFromBook).removePublisherFromBook(bookId);
+		verify(bookUseCase).removePublisherFromBook(bookId);
 	}
 
 	// --- Conflict Handling (database constraint violations) ---
@@ -276,7 +260,7 @@ public class BookControllerTest {
 	void createBookReturnsConflictOnDuplicateIsbn() throws Exception {
 		String requestJson = toRequestJson("New Book", "Sub", "desc", 123, "isbn-2");
 
-		when(createBook.createBook(any(BookRequest.class)))
+		when(bookUseCase.createBook(any(BookRequest.class)))
 				.thenThrow(duplicateConstraintViolation("book_isbn_key"));
 
 		mockMvc
@@ -287,7 +271,7 @@ public class BookControllerTest {
 
 	@Test
 	void addAuthorToBookReturnsConflictOnDuplicateAssociation() throws Exception {
-		when(addAuthorToBook.addAuthorToBook(bookId, authorId))
+		when(bookUseCase.addAuthorToBook(bookId, authorId))
 				.thenThrow(duplicateConstraintViolation("uq_author_book"));
 
 		mockMvc
@@ -300,7 +284,7 @@ public class BookControllerTest {
 	void createBookReturnsGenericConflictForUnknownConstraint() throws Exception {
 		String requestJson = toRequestJson("New Book", "Sub", "desc", 123, "isbn-2");
 
-		when(createBook.createBook(any(BookRequest.class)))
+		when(bookUseCase.createBook(any(BookRequest.class)))
 				.thenThrow(new DataIntegrityViolationException("violated some constraint"));
 
 		mockMvc
