@@ -1,4 +1,4 @@
-package org.example.application.dto;
+package org.example.application.publisher;
 
 import java.util.UUID;
 

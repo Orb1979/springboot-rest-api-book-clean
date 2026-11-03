@@ -1,4 +1,7 @@
-package org.example.application.dto;
+package org.example.application.book;
+
+import org.example.application.author.AuthorResponse;
+import org.example.application.publisher.PublisherResponse;
 
 import java.util.List;
 import java.util.UUID;

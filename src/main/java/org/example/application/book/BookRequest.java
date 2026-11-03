@@ -1,4 +1,4 @@
-package org.example.application.dto;
+package org.example.application.book;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;

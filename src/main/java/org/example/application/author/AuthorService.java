@@ -1,8 +1,6 @@
 package org.example.application.author;
 
 import lombok.RequiredArgsConstructor;
-import org.example.application.dto.AuthorRequest;
-import org.example.application.dto.AuthorResponse;
 import org.example.domain.Author;
 import org.example.application.exception.ResourceNotFoundException;
 import org.example.domain.AuthorRepository;
@@ -13,12 +11,7 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class AuthorService implements
-		CreateAuthorUseCase,
-		GetAuthorUseCase,
-		ListAuthorsUseCase,
-		UpdateAuthorUseCase,
-		DeleteAuthorUseCase {
+public class AuthorService implements AuthorUseCase {
 	private final AuthorRepository authorRepository;
 
 	public List<AuthorResponse> getAllAuthors() {

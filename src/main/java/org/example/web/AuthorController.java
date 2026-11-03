@@ -2,13 +2,9 @@ package org.example.web;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.application.author.CreateAuthorUseCase;
-import org.example.application.author.DeleteAuthorUseCase;
-import org.example.application.author.GetAuthorUseCase;
-import org.example.application.author.ListAuthorsUseCase;
-import org.example.application.author.UpdateAuthorUseCase;
-import org.example.application.dto.AuthorRequest;
-import org.example.application.dto.AuthorResponse;
+import org.example.application.author.AuthorUseCase;
+import org.example.application.author.AuthorRequest;
+import org.example.application.author.AuthorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
@@ -19,37 +15,33 @@ import java.util.UUID;
 @RequestMapping("api/authors")
 @RequiredArgsConstructor
 public class AuthorController {
-	private final ListAuthorsUseCase listAuthors;
-	private final GetAuthorUseCase getAuthor;
-	private final CreateAuthorUseCase createAuthor;
-	private final UpdateAuthorUseCase updateAuthor;
-	private final DeleteAuthorUseCase deleteAuthor;
+	private final AuthorUseCase authorUseCase;
 
 	@GetMapping
 	public List<AuthorResponse> getAllAuthors() {
-		return listAuthors.getAllAuthors();
+		return authorUseCase.getAllAuthors();
 	}
 
 	@GetMapping("/{id}")
 	public AuthorResponse getAuthorById(@PathVariable UUID id) {
-		return getAuthor.getAuthorById(id);
+		return authorUseCase.getAuthorById(id);
 	}
 
 	@PostMapping
 	@ResponseStatus(HttpStatus.CREATED)
 	public AuthorResponse createAuthor(@Valid @RequestBody AuthorRequest authorRequest) {
-		return createAuthor.createAuthor(authorRequest);
+		return authorUseCase.createAuthor(authorRequest);
 	}
 
 	@PutMapping("/{id}")
 	public AuthorResponse updateAuthor(
 			@PathVariable UUID id, @Valid @RequestBody AuthorRequest authorRequest) {
-		return updateAuthor.updateAuthor(id, authorRequest);
+		return authorUseCase.updateAuthor(id, authorRequest);
 	}
 
 	@DeleteMapping("{id}")
 	@ResponseStatus(HttpStatus.NO_CONTENT)
 	public void deleteAuthor(@PathVariable UUID id) {
-		deleteAuthor.deleteAuthor(id);
+		authorUseCase.deleteAuthor(id);
 	}
 }

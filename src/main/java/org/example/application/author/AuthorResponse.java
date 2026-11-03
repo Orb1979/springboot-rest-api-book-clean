@@ -1,4 +1,4 @@
-package org.example.application.dto;
+package org.example.application.author;
 
 import java.time.LocalDate;
 import java.util.UUID;

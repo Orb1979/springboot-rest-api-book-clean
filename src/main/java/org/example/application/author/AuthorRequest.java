@@ -1,4 +1,4 @@
-package org.example.application.dto;
+package org.example.application.author;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Past;

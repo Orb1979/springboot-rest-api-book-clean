@@ -1,7 +1,5 @@
 package org.example.application.publisher;
 
-import org.example.application.dto.PublisherRequest;
-import org.example.application.dto.PublisherResponse;
 import org.example.domain.Publisher;
 import org.example.application.exception.ResourceNotFoundException;
 import org.example.domain.PublisherRepository;
