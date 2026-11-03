@@ -25,7 +25,8 @@ public class AuthorBook {
 	@JoinColumn(name = "book_id")
 	private Book book;
 
-	public AuthorBook(Author author, Book book) {
+	// Package-private: only the aggregate root (Book) creates author-book links.
+	AuthorBook(Author author, Book book) {
 		this.author = author;
 		this.book = book;
 	}
