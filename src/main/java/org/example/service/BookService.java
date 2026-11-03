@@ -31,11 +31,11 @@ public class BookService {
 	private final AuthorRepository authorRepository;
 
 	public List<BookResponse> getAllBooks() {
-		return bookRepository.findAllHydrated().stream().map(BookService::toResponseDto).toList();
+		return bookRepository.findAllWithDetailsBy().stream().map(BookService::toResponseDto).toList();
 	}
 
 	public BookResponse getBookById(UUID id) {
-		Book book = bookRepository.findByIdHydrated(id).orElseThrow(
+		Book book = bookRepository.findWithDetailsById(id).orElseThrow(
 				() -> new ResourceNotFoundException("Book not found, id: " + id));
 		return toResponseDto(book);
 	}
@@ -50,7 +50,7 @@ public class BookService {
 	public BookResponse updateBook(UUID id, BookRequest bookRequestDto) {
 		Book existingBook =
 				bookRepository
-						.findByIdHydrated(id)
+						.findWithDetailsById(id)
 						.orElseThrow(() -> new ResourceNotFoundException("Book not found, id: " + id));
 		existingBook.setTitle(bookRequestDto.title());
 		existingBook.setSubTitle(bookRequestDto.subTitle());
@@ -122,7 +122,7 @@ public class BookService {
 			throw new BadRequestException("authorIds cannot be null");
 		}
 
-		Book book = bookRepository.findByIdHydrated(bookId)
+		Book book = bookRepository.findWithDetailsById(bookId)
 						.orElseThrow(() -> new ResourceNotFoundException("Book not found"));
 
 		syncAuthors(book, authorIds);
