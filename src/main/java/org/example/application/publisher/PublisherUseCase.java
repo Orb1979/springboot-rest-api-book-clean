@@ -1,7 +1,5 @@
 package org.example.application.publisher;
 
-import org.example.application.dto.PublisherRequest;
-import org.example.application.dto.PublisherResponse;
 
 import java.util.List;
 import java.util.UUID;

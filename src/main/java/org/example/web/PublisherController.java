@@ -2,8 +2,8 @@ package org.example.web;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.example.application.dto.PublisherRequest;
-import org.example.application.dto.PublisherResponse;
+import org.example.application.publisher.PublisherRequest;
+import org.example.application.publisher.PublisherResponse;
 import org.example.application.publisher.PublisherUseCase;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;

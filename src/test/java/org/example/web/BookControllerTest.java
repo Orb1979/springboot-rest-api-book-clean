@@ -1,10 +1,10 @@
 package org.example.web;
 
 import org.example.application.book.BookUseCase;
-import org.example.application.dto.AuthorResponse;
-import org.example.application.dto.BookRequest;
-import org.example.application.dto.BookResponse;
-import org.example.application.dto.PublisherResponse;
+import org.example.application.author.AuthorResponse;
+import org.example.application.book.BookRequest;
+import org.example.application.book.BookResponse;
+import org.example.application.publisher.PublisherResponse;
 import org.example.application.exception.ResourceNotFoundException;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.jupiter.api.BeforeEach;

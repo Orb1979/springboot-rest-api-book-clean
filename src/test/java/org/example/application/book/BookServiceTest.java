@@ -1,7 +1,5 @@
 package org.example.application.book;
 
-import org.example.application.dto.BookRequest;
-import org.example.application.dto.BookResponse;
 import org.example.domain.Author;
 import org.example.domain.Book;
 import org.example.domain.Publisher;

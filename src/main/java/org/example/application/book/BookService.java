@@ -1,10 +1,8 @@
 package org.example.application.book;
 
 import lombok.RequiredArgsConstructor;
-import org.example.application.dto.AuthorResponse;
-import org.example.application.dto.BookRequest;
-import org.example.application.dto.BookResponse;
-import org.example.application.dto.PublisherResponse;
+import org.example.application.author.AuthorResponse;
+import org.example.application.publisher.PublisherResponse;
 import org.example.application.exception.BadRequestException;
 import org.example.application.exception.ResourceNotFoundException;
 import org.example.domain.Author;

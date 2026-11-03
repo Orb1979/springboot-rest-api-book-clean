@@ -1,7 +1,5 @@
 package org.example.application.author;
 
-import org.example.application.dto.AuthorRequest;
-import org.example.application.dto.AuthorResponse;
 
 import java.util.List;
 import java.util.UUID;

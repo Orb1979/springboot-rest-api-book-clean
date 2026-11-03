@@ -1,8 +1,6 @@
 package org.example.application.author;
 
 import lombok.RequiredArgsConstructor;
-import org.example.application.dto.AuthorRequest;
-import org.example.application.dto.AuthorResponse;
 import org.example.domain.Author;
 import org.example.application.exception.ResourceNotFoundException;
 import org.example.domain.AuthorRepository;

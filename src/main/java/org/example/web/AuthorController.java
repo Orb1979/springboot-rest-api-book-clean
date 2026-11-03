@@ -3,8 +3,8 @@ package org.example.web;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.example.application.author.AuthorUseCase;
-import org.example.application.dto.AuthorRequest;
-import org.example.application.dto.AuthorResponse;
+import org.example.application.author.AuthorRequest;
+import org.example.application.author.AuthorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 

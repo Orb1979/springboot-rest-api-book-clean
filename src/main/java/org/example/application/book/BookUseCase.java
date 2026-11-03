@@ -1,7 +1,5 @@
 package org.example.application.book;
 
-import org.example.application.dto.BookRequest;
-import org.example.application.dto.BookResponse;
 
 import java.util.List;
 import java.util.UUID;

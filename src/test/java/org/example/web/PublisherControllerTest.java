@@ -1,8 +1,8 @@
 package org.example.web;
 
 import org.example.application.publisher.PublisherUseCase;
-import org.example.application.dto.PublisherRequest;
-import org.example.application.dto.PublisherResponse;
+import org.example.application.publisher.PublisherRequest;
+import org.example.application.publisher.PublisherResponse;
 import org.example.application.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
